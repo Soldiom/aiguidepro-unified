@@ -10,13 +10,16 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "deploy:hf": "node scripts/huggingface/deploy-spaces.mjs",
+    "seed:agents": "node scripts/seed-agents.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
     "@aws-sdk/s3-request-presigner": "^3.693.0",
     "@huggingface/hub": "^2.6.13",
     "@huggingface/inference": "^4.13.3",
+    "@netlify/functions": "^2.8.2",
     "@octokit/rest": "^22.0.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -66,6 +69,7 @@
     "nanoid": "^5.1.5",
     "next-themes": "^0.4.6",
     "openai": "^4.67.0",
+    "playwright": "^1.50.0",
     "react": "^19.1.1",
     "react-day-picker": "^9.11.1",
     "react-dom": "^19.1.1",

@@ -1,0 +1,91 @@
+name: Scheduled Tasks
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  data-collection:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Run data collector
+        run: |
+          node -e "
+          import('./server/data-collector.ts').then(module => {
+            const { DataCollector } = module;
+            const collector = new DataCollector(
+              process.env.GITHUB_TOKEN,
+              process.env.HF_API_KEY
+            );
+            return collector.collectAll();
+          }).then(() => console.log('Data collection complete'))
+            .catch(err => {
+              console.error('Data collection failed:', err);
+              process.exit(1);
+            });
+          "
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          HF_API_KEY: ${{ secrets.HF_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          
+  model-training:
+    runs-on: ubuntu-latest
+    needs: data-collection
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Run model training
+        run: |
+          node -e "
+          import('./server/training-scheduler.ts').then(module => {
+            const { TrainingScheduler } = module;
+            const scheduler = new TrainingScheduler();
+            return scheduler.runScheduledTraining();
+          }).then(() => console.log('Training complete'))
+            .catch(err => {
+              console.error('Training failed:', err);
+              process.exit(1);
+            });
+          "
+        env:
+          HF_API_KEY: ${{ secrets.HF_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
